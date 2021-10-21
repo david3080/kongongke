@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: konga
+  name: konga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: konga
+  template:
+    metadata:
+      labels:
+        app: konga
+    spec:
+      containers:
+      - image: pantsel/konga
+        name: konga
+        ports:
+          - name: http
+            containerPort: 1337
+            protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http

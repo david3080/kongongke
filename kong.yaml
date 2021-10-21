@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: kong
+  name: kong
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kong
+  template:
+    metadata:
+      labels:
+        app: kong
+    spec:
+      containers:
+      - name: kong
+        image: kong
+        env:
+        - name: KONG_DATABASE
+          value: "postgres"
+        - name: KONG_PG_HOST
+          value: "127.0.0.1"
+        - name: KONG_PG_PORT
+          value: "5432"
+        - name: KONG_PG_DATABASE
+          value: "kong"
+        - name: KONG_PG_USER
+          value: "kong"
+        - name: KONG_PG_PASSWORD
+          value: "passw0rd"
+        - name: KONG_PROXY_LISTEN
+          value: 0.0.0.0:8000 http2
+        - name: KONG_ADMIN_LISTEN
+          value: 0.0.0.0:8001
+        - name: KONG_STATUS_LISTEN
+          value: 0.0.0.0:8100
+        - name: KONG_ADMIN_ACCESS_LOG
+          value: "/dev/stdout"
+        - name: KONG_ADMIN_ERROR_LOG
+          value: "/dev/stderr"
+        - name: KONG_PROXY_ERROR_LOG
+          value: "/dev/stderr"
+        ports:
+        - containerPort: 8000
+          name: proxy
+        - containerPort: 8001
+          name: admin
+        - containerPort: 8100
+          name: metrics
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: 8100
+      - name: cloud-sql-proxy
+        image: gcr.io/cloudsql-docker/gce-proxy:1.25.0
+        command:
+          - "/cloud_sql_proxy"
+          - "-instances=test-1632502864086:asia-northeast1:kongdb=tcp:5432"
+          - "-credential_file=/secrets/service_account.json"
+          - "-use_http_health_check"
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 8090
+        securityContext:
+          runAsNonRoot: true
+        volumeMounts:
+        - name: postgressa
+          mountPath: /secrets/
+          readOnly: true
+      volumes:
+      - name: postgressa
+        secret:
+          secretName: postgressa
+      

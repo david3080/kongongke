@@ -17,10 +17,12 @@ spec:
       containers:
       - image: pantsel/konga
         name: konga
+        env:
+        - name: NODE_ENV
+          value: "production"
         ports:
           - name: http
             containerPort: 1337
-            protocol: TCP
         readinessProbe:
           httpGet:
             path: /
